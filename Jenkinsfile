@@ -15,7 +15,7 @@ pipeline {
         stage('Checkout Code') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/ORG_NAME/REPO_NAME.git'
+                    url: 'https://github.com/Manish636700/assignment-test.git'
             }
         }
 
