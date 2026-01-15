@@ -1,71 +1,14 @@
-pipeline {
-    agent any
+version: "3.8"
 
-    options {
-        timestamps()
-        disableConcurrentBuilds()
-    }
+services:
+  web:
+    image: nginx:alpine
+    container_name: test-nginx
+    ports:
+      - "8081:80"
+    restart: unless-stopped
 
-    environment {
-        DEPLOY_DIR = "/opt/prod-docker-app"
-    }
-
-    stages {
-
-        stage('Checkout Code') {
-            steps {
-                git branch: 'main',
-                    url: 'https://github.com/Manish636700/assignment-test.git'
-            }
-        }
-
-        stage('Prepare Deploy Directory') {
-            steps {
-                sh '''
-                  sudo mkdir -p /opt/prod-docker-app
-                  sudo rsync -av --delete ./ /opt/prod-docker-app/
-                '''
-            }
-        }
-
-        stage('Build Docker Images') {
-            steps {
-                dir('/opt/prod-docker-app') {
-                    sh 'docker compose build'
-                }
-            }
-        }
-
-        stage('Deploy Containers') {
-            steps {
-                dir('/opt/prod-docker-app') {
-                    sh '''
-                      docker compose down
-                      docker compose up -d
-                    '''
-                }
-            }
-        }
-
-        stage('Health Check') {
-            steps {
-                sh '''
-                  sleep 10
-                  curl -f http://localhost || exit 1
-                '''
-            }
-        }
-    }
-
-    post {
-        success {
-            echo "✅ Deployment successful"
-        }
-        failure {
-            echo "❌ Deployment failed"
-        }
-        always {
-            sh 'docker system prune -f'
-        }
-    }
-}
+  hello:
+    image: busybox
+    container_name: test-hello
+    command: ["sh", "-c", "echo Hello from Docker Compose && sleep 10"]
