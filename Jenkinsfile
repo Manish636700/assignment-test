@@ -6,26 +6,44 @@ pipeline {
         disableConcurrentBuilds()
     }
 
+    environment {
+        DEPLOY_DIR = "/opt/prod-docker-app"
+    }
+
     stages {
 
         stage('Checkout Code') {
             steps {
-                git 'https://github.com/your-org/your-repo.git'
+                git branch: 'main',
+                    url: 'https://github.com/ORG_NAME/REPO_NAME.git'
+            }
+        }
+
+        stage('Prepare Deploy Directory') {
+            steps {
+                sh '''
+                  sudo mkdir -p /opt/prod-docker-app
+                  sudo rsync -av --delete ./ /opt/prod-docker-app/
+                '''
             }
         }
 
         stage('Build Docker Images') {
             steps {
-                sh 'docker compose build'
+                dir('/opt/prod-docker-app') {
+                    sh 'docker compose build'
+                }
             }
         }
 
         stage('Deploy Containers') {
             steps {
-                sh '''
-                  docker compose down
-                  docker compose up -d
-                '''
+                dir('/opt/prod-docker-app') {
+                    sh '''
+                      docker compose down
+                      docker compose up -d
+                    '''
+                }
             }
         }
 
@@ -42,6 +60,9 @@ pipeline {
     post {
         success {
             echo "✅ Deployment successful"
+        }
+        failure {
+            echo "❌ Deployment failed"
         }
         always {
             sh 'docker system prune -f'
